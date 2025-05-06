@@ -1,39 +1,33 @@
-from textblob import TextBlob
+from transformers import pipeline
 import matplotlib.pyplot as plt
 
-# Sample list of social media conversations
-social_media_posts = [
-    "I love the new features in this app!",
-    "This update is terrible. It ruined everything.",
-    "I'm not sure how I feel about this update.",
-    "Best day ever! Thank you for the amazing experience.",
-    "I'm so disappointed with the service lately.",
+# Load the emotion classification pipeline
+emotion_classifier = pipeline("text-classification", 
+                              model="j-hartmann/emotion-english-distilroberta-base", 
+                              return_all_scores=True)
+
+# Social media texts
+texts = [
+    "I am so happy with my new phone!",
+    "This is the worst movie I've ever seen.",
+    "I’m scared of what might happen tomorrow.",
+    "Wow, I didn't expect that! Amazing!",
+    "Feeling a bit down today."
 ]
 
-# Function to analyze sentiment and collect counts
-def analyze_sentiment(posts):
-    sentiment_counts = {"Positive": 0, "Negative": 0, "Neutral": 0}
-    
-    for post in posts:
-        blob = TextBlob(post)
-        sentiment_score = blob.sentiment.polarity
-        
-        if sentiment_score > 0:
-            sentiment = "Positive"
-        elif sentiment_score < 0:
-            sentiment = "Negative"
-        else:
-            sentiment = "Neutral"
-        
-        sentiment_counts[sentiment] += 1
-        print(f"Post: {post}\nSentiment: {sentiment} (Score: {sentiment_score})\n")
-    
-    # Plotting the bar chart
-    plt.bar(sentiment_counts.keys(), sentiment_counts.values(), color=['green', 'red', 'gray'])
-    plt.title("Sentiment Analysis of Social Media Posts")
-    plt.xlabel("Sentiment")
-    plt.ylabel("Number of Posts")
-    plt.show()
+# Analyze and plot top 3 emotions for each text
+for idx, text in enumerate(texts):
+    emotions = emotion_classifier(text)[0]
+    emotions = sorted(emotions, key=lambda x: x['score'], reverse=True)[:3]
 
-# Run the analysis
-analyze_sentiment(social_media_posts)
+    labels = [e['label'] for e in emotions]
+    scores = [e['score'] for e in emotions]
+
+    plt.figure(figsize=(6, 4))
+    plt.bar(labels, scores, color='skyblue')
+    plt.title(f"Top Emotions for Text {idx+1}")
+    plt.ylim(0, 1)
+    plt.ylabel("Score")
+    plt.xlabel("Emotion")
+    plt.tight_layout()
+    plt.show()
